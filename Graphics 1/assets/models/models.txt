@@ -1,5 +1,2 @@
 Sphere_1_unit_Radius.ply
 Flat_1x1_plane.ply
-SM_Ship_Massive_Transport_01_xyz_n_rgba_uv_flatshaded_xyz_n_rgba.ply
-Asteroid_015_x10_flatshaded_xyz_n_rgba.ply
-Asteroid_011_x10_flatshaded_xyz_n_rgba.ply

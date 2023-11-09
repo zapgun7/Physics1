@@ -179,12 +179,12 @@ struct sPhsyicsProperties
 //	glm::vec3 orientation = glm::vec3(0.0f);
 	void setRotationFromEuler(glm::vec3 newEulerAngleXYZ)
 	{
-		this->m_qOrientation = glm::quat(newEulerAngleXYZ);
+		this->m_qOrientation = glm::quat(glm::radians(newEulerAngleXYZ));
 	}
 
 	void adjustRoationAngleFromEuler(glm::vec3 EulerAngleXYZ_Adjust)
 	{
-		glm::quat qChange = glm::quat(EulerAngleXYZ_Adjust);
+		glm::quat qChange = glm::quat(glm::radians(EulerAngleXYZ_Adjust));
 		this->m_qOrientation *= qChange;
 	}
 
@@ -203,6 +203,7 @@ public:
 	// Since division is "slow" and we are dividing my mass, 
 	// Could make this immovable by making this 0 (infinite mass)
 	float inverse_mass = 0.0f;	//	float mass;		
+
 
 //	cMesh* pTheAssociatedMesh;
 	iPhysicsMeshTransformAccess* pTheAssociatedMesh;

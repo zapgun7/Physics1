@@ -56,6 +56,45 @@ void cPhysics::setGraphics(void)
 	m_pGraphicsMain = cGraphicsMain::getGraphicsMain();
 }
 
+void cPhysics::setShapePos(glm::vec3 newPos, unsigned int ID)
+{
+	for (sPhsyicsProperties* physObj : m_vec_pPhysicalProps)
+	{
+		if (physObj->getUniqueID() == ID)
+		{
+			physObj->position = newPos;
+			physObj->oldPosition = newPos; // So no wacky physics stuff happens
+			return;
+		}
+	}
+}
+
+void cPhysics::setShapeOri(glm::vec3 newOri, unsigned int ID) // Passed in ori is in euler
+{
+	for (sPhsyicsProperties* physObj : m_vec_pPhysicalProps)
+	{
+		if (physObj->getUniqueID() == ID)
+		{
+			physObj->setRotationFromEuler(glm::radians(newOri));
+			return;
+		}
+	}
+}
+
+void cPhysics::setPhysicsRunningState(bool isRunning)
+{
+	m_IsRunning = isRunning;
+	return;
+}
+
+void cPhysics::deleteAllObjects(void)
+{
+	for (sPhsyicsProperties* physObj : m_vec_pPhysicalProps)
+	{
+		delete physObj;
+	}
+}
+
 sPhsyicsProperties* cPhysics::findShapeByUniqueID(unsigned int uniqueIDtoFind)
 {
 	for (sPhsyicsProperties* pCurrentShape : this->m_vec_pPhysicalProps)

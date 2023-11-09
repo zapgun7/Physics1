@@ -16,6 +16,22 @@ void cPhysics::Update(double deltaTime)
 //		// ...and so on...
 //
 //	}
+	if (!m_IsRunning) // If physics paused, update positions/orientations only and return; no collision detection
+	{
+		for (sPhsyicsProperties* pObject : this->m_vec_pPhysicalProps)
+		{
+			if (pObject->pTheAssociatedMesh)
+			{
+				pObject->pTheAssociatedMesh->setDrawPosition(pObject->position);
+				//			pObject->pTheAssociatedMesh->setDrawOrientation(pObject->orientation);
+				pObject->pTheAssociatedMesh->setDrawOrientation(pObject->get_qOrientation());
+			}
+		}
+
+
+
+		return;
+	}
 
 	// Perform the iteration loop
 	for (sPhsyicsProperties* pObject : this->m_vec_pPhysicalProps)

@@ -44,8 +44,8 @@ cGraphicsMain* cGraphicsMain::getGraphicsMain(void) // Making graphics main a si
 
 cGraphicsMain::cGraphicsMain()
 {
-	m_cameraEye = glm::vec3(15000.0, 0.0f, 25000.0f);
-	m_cameraTarget = glm::vec3(-0.55f, 0.0f, -0.45f);
+	m_cameraEye = glm::vec3(1000, 100.0f, 1000);
+	m_cameraTarget = glm::vec3(-1.0f, -0.2f, -1.0f);
 	m_cameraRotation = glm::vec3(0.0, 0.0f, 0.0f);
 	m_upVector = glm::vec3(0.0f, 1.0f, 0.0f);
 	m_ShowLightEditor = false;
@@ -168,6 +168,13 @@ bool cGraphicsMain::Initialize()
 	m_pTheLights->theLights[0].direction.z = -0.45f;
 	m_pTheLights->theLights[0].direction.y = -0.1f;
 
+	// The other one light
+	m_pTheLights->theLights[1].param2.x = 1; // Turn on
+	m_pTheLights->theLights[1].param1.x = 2; // Dir light
+	m_pTheLights->theLights[1].direction.x = 0.45f;
+	m_pTheLights->theLights[1].direction.z = 0.45f;
+	m_pTheLights->theLights[1].direction.y = -0.1f;
+
 
 
 	// 2 Asteroid types
@@ -202,7 +209,7 @@ bool cGraphicsMain::Initialize()
 bool cGraphicsMain::Update() // Main "loop" of the window. Not really a loop, just gets called every tick
 {
 
-	srand(time(NULL)); // better random
+	//srand(time(NULL)); // better random
 
 	// Start the Dear ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();
@@ -213,12 +220,16 @@ bool cGraphicsMain::Update() // Main "loop" of the window. Not really a loop, ju
 	lastTime = glfwGetTime();
 
 
+	static bool enablePhysics = false; // Toggle physics update calls
 
 
 
 
-	// Graphics update     will find a better spot for it later TODO
-	::g_pPhysics->Update(deltaTime); // TODO change this back
+
+	// Graphics update will find a better spot for it later TODO
+	::g_pPhysics->Update(deltaTime); 
+
+
 // 	int tempVal = glfwGetKey(m_window, GLFW_KEY_P);
 // 	static bool isPressed = false;
 // 	if ((tempVal == GLFW_PRESS) && (!isPressed))
@@ -264,6 +275,21 @@ bool cGraphicsMain::Update() // Main "loop" of the window. Not really a loop, ju
 				mesh_obj_idx = m_vec_pMeshesToDraw.size() - 1;
 			}
 		}
+
+		if (ImGui::Button("Physics Toggle"))
+		{
+			if (enablePhysics)
+				enablePhysics = false;
+			else
+				enablePhysics = true;
+			::g_pPhysics->setPhysicsRunningState(enablePhysics);
+		}
+
+		ImGui::SameLine();
+		if (enablePhysics)
+			ImGui::Text("ON");
+		else
+			ImGui::Text("OFF");
 
 
 		if (ImGui::Button("Mesh Editor"))
@@ -378,8 +404,11 @@ bool cGraphicsMain::Update() // Main "loop" of the window. Not really a loop, ju
 		float scale = 0;
 		glm::vec3 customColor(0.0f, 0.0f, 0.0f);
 		bool useCustomColor;
+
+
 		if (isExistingMesh)
 		{
+			// TODO   this is fine for now, but we should be getting the values from the physics object instead. They should always match at this stage but who the hell knows?
 			xPos = m_vec_pMeshesToDraw[mesh_obj_idx]->drawPosition.x;
 			yPos = m_vec_pMeshesToDraw[mesh_obj_idx]->drawPosition.y;
 			zPos = m_vec_pMeshesToDraw[mesh_obj_idx]->drawPosition.z;
@@ -723,7 +752,7 @@ void cGraphicsMain::Destroy()
 // 	return;
 // }
 
-void cGraphicsMain::removeFromDrawMesh(int ID)
+void cGraphicsMain::removeFromDrawMesh(int ID) // Shouldn't be used as it doesn't delete the physics obj
 {
 	for (unsigned int i = 0; i < m_vec_pMeshesToDraw.size(); i++)
 	{
@@ -737,13 +766,62 @@ void cGraphicsMain::removeFromDrawMesh(int ID)
 }
 
 // Will replace all meshes and lights with the ones provided
-void cGraphicsMain::switchScene(std::vector< cMesh* > newMeshVec, std::vector<cLight> newLights)
+void cGraphicsMain::switchScene(std::vector< cMesh* > newMeshVec, std::vector<cLight> newLights) // TODO have to load in physics side of objects
 {
 	for (unsigned int i = 0; i < m_vec_pMeshesToDraw.size(); i++) // Delete all pointers to meshes
 	{
 		delete m_vec_pMeshesToDraw[i];
 	}
 	m_vec_pMeshesToDraw = newMeshVec; // Set new mesh vector
+
+	for (cMesh* meshObj : m_vec_pMeshesToDraw) // Attach physics objects to all new objects
+	{
+		sPhsyicsProperties* newShape;
+		if (meshObj->meshName == "Sphere_1_unit_Radius.ply")
+		{
+			newShape = new sPhsyicsProperties();
+			newShape->shapeType = sPhsyicsProperties::SPHERE;
+			newShape->setShape(new sPhsyicsProperties::sSphere(0.5f)); // Since a unit sphere, radius of .5 
+			newShape->pTheAssociatedMesh = meshToAdd;
+			newShape->inverse_mass = 1.0f; // Idk what to set this
+			newShape->friendlyName = "Sphere";
+			newShape->acceleration.y = -1.0f;
+			::g_pPhysics->AddShape(newShape);
+		}
+		else if (meshObj->meshName == "Flat_1x1_plane.ply")
+		{
+			// Add matching physics object
+			newShape = new sPhsyicsProperties();
+			newShape->shapeType = sPhsyicsProperties::PLANE;
+
+			//    pGroundMeshShape->setShape( new sPhsyicsProperties::sMeshOfTriangles_Indirect("HilbertRamp_stl (rotated).ply") );
+
+			//newShape->setShape(new sPhsyicsProperties::sMeshOfTriangles_Indirect(meshObj->meshName));
+			newShape->setShape(new sPhsyicsProperties::sPlane(glm::vec3(0,1,0))); // TODO calculate the actual normal later
+
+			// Tie this phsyics object to the associated mesh
+			newShape->pTheAssociatedMesh = meshToAdd;
+			// If it's infinite, the physics intrator ignores it
+			newShape->inverse_mass = 0.0f;  // Infinite, so won't move
+
+			newShape->position.y = -50.0f;
+			//    pGroundMeshShape->orientation.z = glm::radians(-45.0f);
+			newShape->friendlyName = "Plane";
+			::g_pPhysics->AddShape(newShape);
+		}
+		else // Just make it an indirect triangle mesh
+		{
+			newShape = new sPhsyicsProperties();
+			newShape->shapeType = sPhsyicsProperties::MESH_OF_TRIANGLES_INDIRECT;
+			newShape->setShape(new sPhsyicsProperties::sMeshOfTriangles_Indirect(meshToAdd->meshName));
+			newShape->pTheAssociatedMesh = meshToAdd;
+			newShape->inverse_mass = 0.0f; // Idk what to set this
+			newShape->friendlyName = "IndirectMesh";
+			newShape->setRotationFromEuler(glm::vec3(0.0f));
+			::g_pPhysics->AddShape(newShape);
+		}
+		meshObj->uniqueID = newShape->getUniqueID(); // Set mesh ID to match associated physics object's ID
+	}
 
 	for (unsigned int i = 0; i < m_pTheLights->NUMBER_OF_LIGHTS_IM_USING; i++) // Iterate through all lights and replace them with the new ones. Just replace non UL values
 	//for (unsigned int i = 0; i < newLights.size(); i++) // Use this for updating files that contain less (total possible) than what it currently is
@@ -759,88 +837,7 @@ void cGraphicsMain::switchScene(std::vector< cMesh* > newMeshVec, std::vector<cL
 	}
 }
 
-void cGraphicsMain::astShipColl(int astID, glm::vec3 collPoint)
-{
-	bool objectDestroyed = false;
 
-	std::vector< sPhsyicsProperties* > physObjs = ::g_pPhysics->getPhysicsVec();
-	for (sPhsyicsProperties* physObj : physObjs) // Loop through all physics objects, delete any who are past some -z position
-	{
-		if (physObj->getUniqueID() == astID) // Find colliding asteroid ID
-		{
-			std::cout << "Deleting Asteroid!" << std::endl;
-			int idToDelete = physObj->getUniqueID();
-			::g_pPhysics->DeleteShape(physObj->getUniqueID()); // Delete physics object
-			for (cMesh* meshToCheck : m_vec_pMeshesToDraw)
-			{
-				if (meshToCheck->uniqueID == idToDelete)
-				{
-					//removeFromDrawMesh(idToDelete);
-					meshToCheck->isDestructing = true;
-					objectDestroyed = true;
-					break;
-				}
-			}
-			if (objectDestroyed)
-				break;
-		}
-	}
-	// Spawn "explosion" here
-	cMesh* explosionMesh = new cMesh();
-	explosionMesh->meshName = "Sphere_1_unit_Radius.ply"; // Set object type
-	explosionMesh->friendlyName = "Explosionship";
-	explosionMesh->bDoNotLight = false;
-	explosionMesh->uniqueID = m_explosionIDs--;
-	explosionMesh->bUseDebugColours = true; // let it know we want it to use our custom color
-	explosionMesh->wholeObjectDebugColourRGBA = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // Red
-	explosionMesh->scale = glm::vec3(100.0f);
-	explosionMesh->drawPosition = collPoint;
-	m_vec_pMeshesToDraw.push_back(explosionMesh);
-}
-
-void cGraphicsMain::astAstColl(int ast1ID, int ast2ID, glm::vec3 collPoint)
-{
-	int objectsDestroyed = 0;
-
-	std::vector< sPhsyicsProperties* > physObjs = ::g_pPhysics->getPhysicsVec();
-	for (sPhsyicsProperties* physObj : physObjs) // Loop through all physics objects, delete any who are past some -z position
-	{
-		if (physObj->getUniqueID() == ast1ID || physObj->getUniqueID() == ast2ID) // Find colliding asteroid ID
-		{
-			std::cout << "Deleting Asteroids!" << std::endl;
-			int idToDelete = physObj->getUniqueID();
-			::g_pPhysics->DeleteShape(physObj->getUniqueID()); // Delete physics object
-			for (cMesh* meshToCheck : m_vec_pMeshesToDraw)
-			{
-				if (meshToCheck->uniqueID == idToDelete)
-				{
-					//removeFromDrawMesh(idToDelete);
-					meshToCheck->isDestructing = true;
-					objectsDestroyed++;
-					break;
-				}
-			}
-			if (objectsDestroyed == 2)
-				break;
-		}
-	}
-	// Spawn "explosion" here
-	cMesh* explosionMesh = new cMesh();
-	explosionMesh->meshName = "Sphere_1_unit_Radius.ply"; // Set object type
-	explosionMesh->friendlyName = "Explosion";
-	explosionMesh->bDoNotLight = false;
-	explosionMesh->uniqueID = m_explosionIDs--;
-	explosionMesh->bUseDebugColours = true; // let it know we want it to use our custom color
-	explosionMesh->wholeObjectDebugColourRGBA = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // Red
-	explosionMesh->scale = glm::vec3(100.0f);
-	explosionMesh->drawPosition = collPoint;
-	m_vec_pMeshesToDraw.push_back(explosionMesh);
-}
-
-bool cGraphicsMain::getShieldStatus(void)
-{
-	return m_isShieldOn;
-}
 
 cMesh* cGraphicsMain::m_pFindMeshByFriendlyName(std::string friendlyNameToFind)
 {
@@ -1027,8 +1024,10 @@ bool cGraphicsMain::LoadModels(void)
 }
 
 // Adds new object to the meshestodraw
-void cGraphicsMain::addNewMesh(std::string fileName, char* friendlyName)
+void cGraphicsMain::addNewMesh(std::string fileName, char* friendlyName) // This should create the physics object first, then the mesh, then set associated mesh
 {
+
+	// Create the mesh
 	cMesh* meshToAdd = new cMesh();
 	meshToAdd->meshName = fileName; // Set object type
 	meshToAdd->friendlyName = friendlyName;
@@ -1037,52 +1036,71 @@ void cGraphicsMain::addNewMesh(std::string fileName, char* friendlyName)
 
 	m_vec_pMeshesToDraw.push_back(meshToAdd);
 	//return;
+	
+	// Create the physics object
+
+	sPhsyicsProperties* newShape = new sPhsyicsProperties();
 	if (fileName == "Sphere_1_unit_Radius.ply")
 	{
-		sPhsyicsProperties* pSphereMeshShape = new sPhsyicsProperties();
-		pSphereMeshShape->shapeType = sPhsyicsProperties::SPHERE;
-		pSphereMeshShape->setShape(new sPhsyicsProperties::sSphere(0.5f)); // Since a unit sphere, radius of .5 
-		pSphereMeshShape->pTheAssociatedMesh = meshToAdd;
-		pSphereMeshShape->inverse_mass = 1.0f; // Idk what to set this
-		pSphereMeshShape->friendlyName = "Sphere";
-		pSphereMeshShape->acceleration.y = -1.0f;
-		::g_pPhysics->AddShape(pSphereMeshShape);
+		newShape->shapeType = sPhsyicsProperties::SPHERE;
+		newShape->setShape(new sPhsyicsProperties::sSphere(0.5f)); // Since a unit sphere, radius of .5 
+		newShape->pTheAssociatedMesh = meshToAdd;
+		newShape->inverse_mass = 1.0f; // Idk what to set this
+		newShape->friendlyName = "Sphere";
+		newShape->acceleration.y = -1.0f;
+		::g_pPhysics->AddShape(newShape);
 	}
 	else if (fileName == "Flat_1x1_plane.ply")
 	{
 		// Add matching physics object
-		sPhsyicsProperties* pGroundMeshShape = new sPhsyicsProperties();
-		pGroundMeshShape->shapeType = sPhsyicsProperties::PLANE;
+		newShape->shapeType = sPhsyicsProperties::PLANE;
 
 		//    pGroundMeshShape->setShape( new sPhsyicsProperties::sMeshOfTriangles_Indirect("HilbertRamp_stl (rotated).ply") );
-		pGroundMeshShape->setShape(new sPhsyicsProperties::sMeshOfTriangles_Indirect(meshToAdd->meshName));
+		//newShape->setShape(new sPhsyicsProperties::sMeshOfTriangles_Indirect(meshToAdd->meshName));
+		newShape->setShape(new sPhsyicsProperties::sPlane(glm::vec3(0, 1, 0))); // TODO calculate the actual normal later
 
 		// Tie this phsyics object to the associated mesh
-		pGroundMeshShape->pTheAssociatedMesh = meshToAdd;
+		newShape->pTheAssociatedMesh = meshToAdd;
 		// If it's infinite, the physics intrator ignores it
-		pGroundMeshShape->inverse_mass = 0.0f;  // Infinite, so won't move
+		newShape->inverse_mass = 0.0f;  // Infinite, so won't move
 
 		//    pGroundMeshShape->acceleration.y = (-9.81f / 5.0f);
 
 		//    pGroundMeshShape->position.x = -10.0f;
-		pGroundMeshShape->position.y = -50.0f;
+		newShape->position.y = -50.0f;
 		//    pGroundMeshShape->orientation.z = glm::radians(-45.0f);
-		pGroundMeshShape->friendlyName = "Plane";
-		::g_pPhysics->AddShape(pGroundMeshShape);
+		newShape->friendlyName = "Plane";
+		::g_pPhysics->AddShape(newShape);
 	}
+	else // Just make it an indirect triangle mesh
+	{
+		newShape->shapeType = sPhsyicsProperties::MESH_OF_TRIANGLES_INDIRECT;
+		newShape->setShape(new sPhsyicsProperties::sMeshOfTriangles_Indirect(meshToAdd->meshName));
+		newShape->pTheAssociatedMesh = meshToAdd;
+		newShape->inverse_mass = 0.0f; // Idk what to set this
+		newShape->friendlyName = "IndirectMesh";
+		newShape->setRotationFromEuler(glm::vec3(0.0f));
+ 		::g_pPhysics->AddShape(newShape);
+	}
+	meshToAdd->uniqueID = newShape->getUniqueID(); // Set mesh ID to match associated physics object's ID
 
 	return;
 }
 
 // Updates values of selected object from the gui
-void cGraphicsMain::updateSelectedMesh(int meshIdx, std::string friendlyName, glm::vec3 newPos, glm::vec3 newOri, glm::vec3 customColor, float newScale, bool doNotLight, bool useCustomColor) // Will need to pass in a lot more info
+void cGraphicsMain::updateSelectedMesh(int meshIdx, std::string friendlyName, glm::vec3 newPos, glm::vec3 newOri, glm::vec3 customColor, float newScale, bool doNotLight, bool useCustomColor) 
 {
-	m_vec_pMeshesToDraw[meshIdx]->drawPosition = newPos;
+	// pos and ori need to update the physics object
+
+	::g_pPhysics->setShapePos(newPos, m_vec_pMeshesToDraw[meshIdx]->uniqueID);
+	::g_pPhysics->setShapeOri(newOri, m_vec_pMeshesToDraw[meshIdx]->uniqueID);
+
+	//m_vec_pMeshesToDraw[meshIdx]->drawPosition = newPos;
 	//m_vec_pMeshesToDraw[meshIdx]->setRotationFromEuler(newOri);
 	//m_vec_pMeshesToDraw[meshIdx]->eulerOrientation = newOri;
-	glm::vec3 oldOri = m_vec_pMeshesToDraw[meshIdx]->getEulerOrientation();
-	glm::vec3 deltaOri = newOri - oldOri;
-	m_vec_pMeshesToDraw[meshIdx]->adjustRotationAngleFromEuler(deltaOri);
+	//glm::vec3 oldOri = m_vec_pMeshesToDraw[meshIdx]->getEulerOrientation();
+	//glm::vec3 deltaOri = newOri - oldOri;
+	//m_vec_pMeshesToDraw[meshIdx]->adjustRotationAngleFromEuler(deltaOri);
 	//m_vec_pMeshesToDraw[meshIdx]->adjustRotationAngleFromEuler(glm::vec3(0.0f, 0.0f, 0.01f));
 	m_vec_pMeshesToDraw[meshIdx]->scale = glm::vec3(newScale, newScale, newScale);
 	m_vec_pMeshesToDraw[meshIdx]->bDoNotLight = doNotLight;
@@ -1110,7 +1128,7 @@ void cGraphicsMain::updateSelectedLight(int lightIdx, glm::vec4 newPos, glm::vec
 	return;
 }
 
-void cGraphicsMain::duplicateMesh(int meshIdx, char* newName)
+void cGraphicsMain::duplicateMesh(int meshIdx, char* newName) // TODO also duplicate physics properties
 {
 	cMesh* duplicateMesh = new cMesh();
 	cMesh* meshToCopy = m_vec_pMeshesToDraw[meshIdx];

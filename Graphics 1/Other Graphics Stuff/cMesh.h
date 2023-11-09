@@ -45,7 +45,7 @@ public:
 	std::string meshName;
 
 	std::string friendlyName;		// "Ground"
-	int uniqueID;
+	int uniqueID; // This should match the physics object id; so create physics first then take that ID and set this one to it
 
 	// Draw loop uses this: 
 	glm::vec3 drawPosition;				
@@ -56,9 +56,6 @@ public:
 	void adjustRotationAngleFromEuler(glm::vec3 EulerAngleXYZ_Adjust);
 	glm::quat get_qOrientation(void);
 	glm::vec3 getEulerOrientation(void); // Returns euler orientation
-
-	bool isDestructing = false;
-	int framesTillDestruction = 80;
 
 private:
 	glm::quat m_qOrientation; // Hiding this

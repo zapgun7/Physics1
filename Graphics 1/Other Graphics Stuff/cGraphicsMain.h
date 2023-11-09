@@ -28,9 +28,7 @@ public:
 	//void addToDrawMesh(cMesh* newMesh);
 	void removeFromDrawMesh(int ID);
 	void switchScene(std::vector< cMesh* > newMeshVec, std::vector<cLight> newLights); // New mesh vector to copy over (will properly release all resources tied to the old one); vector of lights to copy over to the new one
-	void astShipColl(int astID, glm::vec3 collPoint); // Collision between an asteroid and the ship
-	void astAstColl(int ast1ID, int ast2ID, glm::vec3 collPoint); // Collision between two asteroids
-	bool getShieldStatus(void);
+
 
 
 private:

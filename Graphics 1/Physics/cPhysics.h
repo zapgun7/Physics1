@@ -25,6 +25,15 @@ public:
 
 	void Update(double deltaTime);
 
+
+	/// Updating values for the editor  //////  !!! These will only be called when the physics simulation is paused, and only from the editor!
+	void setShapePos(glm::vec3 newPos, unsigned int ID);
+	void setShapeOri(glm::vec3 newOri, unsigned int ID);
+	void setPhysicsRunningState(bool isRunning); // Update whether the physics simulation is paused
+	void deleteAllObjects(void); // Used in loading new scenes
+
+	////////////////////////////////////////
+
 	// returns NULL if not found
 	sPhsyicsProperties* findShapeByUniqueID(unsigned int uniqueIDtoFind);
 	sPhsyicsProperties* findShapeByFriendlyName(std::string friendlyNameToFind);
@@ -59,6 +68,8 @@ private:
 
 	cVAOManager* m_pMeshManager = NULL;
 	cGraphicsMain* m_pGraphicsMain;
+
+	bool m_IsRunning = false; // If physics updates should be calculated. Pausing good for moving stuff around in editor then resuming physics
 
 
 	// this is a list of all the objects that collided this past frame
