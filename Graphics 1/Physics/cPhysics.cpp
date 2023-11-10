@@ -89,9 +89,10 @@ void cPhysics::setPhysicsRunningState(bool isRunning)
 
 void cPhysics::deleteAllObjects(void)
 {
-	for (sPhsyicsProperties* physObj : m_vec_pPhysicalProps)
+	while(m_vec_pPhysicalProps.size() > 0)
 	{
-		delete physObj;
+		delete m_vec_pPhysicalProps[0];
+		m_vec_pPhysicalProps.erase(m_vec_pPhysicalProps.begin());
 	}
 }
 

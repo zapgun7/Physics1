@@ -12,9 +12,19 @@ bool cPhysics::m_Sphere_Sphere_IntersectionTest(sPhsyicsProperties* pSphereA, sP
 	sPhsyicsProperties::sSphere* sphereA = (sPhsyicsProperties::sSphere*)(pSphereA->pShape);
 	sPhsyicsProperties::sSphere* sphereB = (sPhsyicsProperties::sSphere*)(pSphereB->pShape);
 
-	if (glm::distance(pSphereA->position, pSphereB->position) < (sphereA->radius + sphereB->radius))
+	if (glm::distance(pSphereA->position, pSphereB->position) < (sphereA->radius + sphereB->radius)) // TODO, compare if prevpos -> currpos capsule colldies with each other
 	{
 		std::cout << "Spheres touching!" << std::endl; 
+
+
+		glm::vec3 sphereDirection = glm::normalize(pSphereA->velocity);
+		glm::vec3 otherSphNorm = glm::normalize(pSphereA->position - pSphereB->position);
+		float sphereSpeed = glm::length(pSphereA->velocity);
+
+		glm::vec3 reflectionVec = glm::reflect(sphereDirection, otherSphNorm);
+
+		glm::vec3 newVelocity = reflectionVec * sphereSpeed;
+		pSphereA->velocity = newVelocity;
 		return true;
 	}
 	
@@ -175,7 +185,7 @@ bool cPhysics::m_Sphere_TriMeshIndirect_IntersectionTest(sPhsyicsProperties* pSp
 		// Is this the closest so far
 		float distanceToThisTriangle = glm::distance(thisTriangleClosestPoint, pSphere_General->position);
 
-		if (distanceToThisTriangle < closestDistanceSoFar)
+		if (distanceToThisTriangle < closestDistanceSoFar) // TODO Keep track of all triangles that are in/touching the sphere, figure out which one it hit first
 		{
 			// this one is closer
 			closestDistanceSoFar = distanceToThisTriangle;

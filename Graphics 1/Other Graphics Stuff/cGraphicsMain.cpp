@@ -161,19 +161,19 @@ bool cGraphicsMain::Initialize()
 // 	::g_pPhysics->AddShape(pShipMeshShape);
 
 
-	// The one light
-	m_pTheLights->theLights[0].param2.x = 1; // Turn on
-	m_pTheLights->theLights[0].param1.x = 2; // Dir light
-	m_pTheLights->theLights[0].direction.x = -0.45f;
-	m_pTheLights->theLights[0].direction.z = -0.45f;
-	m_pTheLights->theLights[0].direction.y = -0.1f;
-
-	// The other one light
-	m_pTheLights->theLights[1].param2.x = 1; // Turn on
-	m_pTheLights->theLights[1].param1.x = 2; // Dir light
-	m_pTheLights->theLights[1].direction.x = 0.45f;
-	m_pTheLights->theLights[1].direction.z = 0.45f;
-	m_pTheLights->theLights[1].direction.y = -0.1f;
+// 	// The one light
+// 	m_pTheLights->theLights[0].param2.x = 1; // Turn on
+// 	m_pTheLights->theLights[0].param1.x = 2; // Dir light
+// 	m_pTheLights->theLights[0].direction.x = -0.45f;
+// 	m_pTheLights->theLights[0].direction.z = -0.45f;
+// 	m_pTheLights->theLights[0].direction.y = -0.1f;
+// 
+// 	// The other one light
+// 	m_pTheLights->theLights[1].param2.x = 1; // Turn on
+// 	m_pTheLights->theLights[1].param1.x = 2; // Dir light
+// 	m_pTheLights->theLights[1].direction.x = 0.45f;
+// 	m_pTheLights->theLights[1].direction.z = 0.45f;
+// 	m_pTheLights->theLights[1].direction.y = -0.1f;
 
 
 
@@ -774,6 +774,9 @@ void cGraphicsMain::switchScene(std::vector< cMesh* > newMeshVec, std::vector<cL
 	}
 	m_vec_pMeshesToDraw = newMeshVec; // Set new mesh vector
 
+	// Delete all current physics objects
+	::g_pPhysics->deleteAllObjects();
+
 	for (cMesh* meshObj : m_vec_pMeshesToDraw) // Attach physics objects to all new objects
 	{
 		sPhsyicsProperties* newShape;
@@ -785,30 +788,11 @@ void cGraphicsMain::switchScene(std::vector< cMesh* > newMeshVec, std::vector<cL
 			newShape->pTheAssociatedMesh = meshObj;
 			newShape->inverse_mass = 1.0f; // Idk what to set this
 			newShape->friendlyName = "Sphere";
-			newShape->acceleration.y = -9.81f;
+			newShape->acceleration.y = -20.0f;
+			newShape->position = meshObj->drawPosition;
+			newShape->oldPosition = meshObj->drawPosition;
 			::g_pPhysics->AddShape(newShape);
 		}
-// 		else if (meshObj->meshName == "Flat_1x1_plane.ply")
-// 		{
-// 			// Add matching physics object
-// 			newShape = new sPhsyicsProperties();
-// 			newShape->shapeType = sPhsyicsProperties::PLANE;
-// 
-// 			//    pGroundMeshShape->setShape( new sPhsyicsProperties::sMeshOfTriangles_Indirect("HilbertRamp_stl (rotated).ply") );
-// 
-// 			//newShape->setShape(new sPhsyicsProperties::sMeshOfTriangles_Indirect(meshObj->meshName));
-// 			newShape->setShape(new sPhsyicsProperties::sPlane(glm::vec3(0,1,0))); // TODO calculate the actual normal later
-// 
-// 			// Tie this phsyics object to the associated mesh
-// 			newShape->pTheAssociatedMesh = meshObj;
-// 			// If it's infinite, the physics intrator ignores it
-// 			newShape->inverse_mass = 0.0f;  // Infinite, so won't move
-// 
-// 			newShape->position.y = -50.0f;
-// 			//    pGroundMeshShape->orientation.z = glm::radians(-45.0f);
-// 			newShape->friendlyName = "Plane";
-// 			::g_pPhysics->AddShape(newShape);
-// 		}
 		else // Just make it an indirect triangle mesh
 		{
 			newShape = new sPhsyicsProperties();
@@ -817,7 +801,9 @@ void cGraphicsMain::switchScene(std::vector< cMesh* > newMeshVec, std::vector<cL
 			newShape->pTheAssociatedMesh = meshObj;
 			newShape->inverse_mass = 0.0f; // Idk what to set this
 			newShape->friendlyName = "IndirectMesh";
-			newShape->setRotationFromEuler(glm::vec3(0.0f));
+			newShape->setRotationFromEuler(meshObj->getEulerOrientation());
+			newShape->position = meshObj->drawPosition;
+			newShape->oldPosition = meshObj->drawPosition;
 			::g_pPhysics->AddShape(newShape);
 		}
 		meshObj->uniqueID = newShape->getUniqueID(); // Set mesh ID to match associated physics object's ID
@@ -1047,7 +1033,7 @@ void cGraphicsMain::addNewMesh(std::string fileName, char* friendlyName) // This
 		newShape->pTheAssociatedMesh = meshToAdd;
 		newShape->inverse_mass = 1.0f; // Idk what to set this
 		newShape->friendlyName = "Sphere";
-		newShape->acceleration.y = -1.0f;
+		newShape->acceleration.y = -20.0f;
 		::g_pPhysics->AddShape(newShape);
 	}
 // 	else if (fileName == "Flat_1x1_plane.ply")
@@ -1129,21 +1115,21 @@ void cGraphicsMain::updateSelectedLight(int lightIdx, glm::vec4 newPos, glm::vec
 
 void cGraphicsMain::duplicateMesh(int meshIdx, char* newName) // TODO also duplicate physics properties
 {
-	cMesh* duplicateMesh = new cMesh();
+	cMesh* dupedMesh = new cMesh();
 	cMesh* meshToCopy = m_vec_pMeshesToDraw[meshIdx];
 
-	duplicateMesh->meshName = meshToCopy->meshName;
-	duplicateMesh->friendlyName = newName;
-	duplicateMesh->drawPosition = meshToCopy->drawPosition;
-	duplicateMesh->eulerOrientation = meshToCopy->eulerOrientation;
-	duplicateMesh->wholeObjectDebugColourRGBA = meshToCopy->wholeObjectDebugColourRGBA;
-	duplicateMesh->scale = meshToCopy->scale;
-	duplicateMesh->bIsVisible = meshToCopy->bIsVisible;
-	duplicateMesh->bIsWireframe = meshToCopy->bIsWireframe;
-	duplicateMesh->bDoNotLight = meshToCopy->bDoNotLight;
-	duplicateMesh->bUseDebugColours = meshToCopy->bUseDebugColours;
-	duplicateMesh->setRotationFromEuler(duplicateMesh->getEulerOrientation());
-	m_vec_pMeshesToDraw.push_back(duplicateMesh);
+	dupedMesh->meshName = meshToCopy->meshName;
+	dupedMesh->friendlyName = newName;
+	dupedMesh->drawPosition = meshToCopy->drawPosition;
+	dupedMesh->eulerOrientation = meshToCopy->eulerOrientation;
+	dupedMesh->wholeObjectDebugColourRGBA = meshToCopy->wholeObjectDebugColourRGBA;
+	dupedMesh->scale = meshToCopy->scale;
+	dupedMesh->bIsVisible = meshToCopy->bIsVisible;
+	dupedMesh->bIsWireframe = meshToCopy->bIsWireframe;
+	dupedMesh->bDoNotLight = meshToCopy->bDoNotLight;
+	dupedMesh->bUseDebugColours = meshToCopy->bUseDebugColours;
+	dupedMesh->setRotationFromEuler(dupedMesh->getEulerOrientation());
+	m_vec_pMeshesToDraw.push_back(dupedMesh);
 }
 
 void cGraphicsMain::deleteMesh(int meshIDX)

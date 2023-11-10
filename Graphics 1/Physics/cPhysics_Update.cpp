@@ -110,7 +110,7 @@ void cPhysics::Update(double deltaTime)
 					// Sphere - Sphere
 					if (this->m_Sphere_Sphere_IntersectionTest(pObjectA, pObjectB))
 					{
-						std::cout << "Hazzah!" << std::endl;
+						//std::cout << "Hazzah!" << std::endl;
 						// Explode asteroid here
 					}
 					break;
@@ -130,7 +130,7 @@ void cPhysics::Update(double deltaTime)
 					// Sphere - Mesh triangle (indirect)
 					if ( this->m_Sphere_TriMeshIndirect_IntersectionTest( pObjectA, pObjectB))
 					{
-						std::cout << "Hazzah!" << std::endl;
+						//std::cout << "Hazzah!" << std::endl;
 						// Explode asteroid here
 					}
 					break;
@@ -238,19 +238,19 @@ void cPhysics::Update(double deltaTime)
 	// HACK:
 	if ( ! this->m_vecCollisionsThisFrame.empty())
 	{
-		std::cout << "BREAK ME!" << std::endl;
-		
-		std::cout << this->m_vecCollisionsThisFrame.size() << std::endl;
-		for (sCollisionEvent col:  this->m_vecCollisionsThisFrame)
-		{
-			std::cout
-				<< col.pObjectA->getShapeTypeAsString()
-				<< " hit "
-				<< col.pObjectB->getShapeTypeAsString()
-				<< std::endl;
-		}
-		std::cout << "******************************************" << std::endl;
-		// HACK:
+// 		std::cout << "BREAK ME!" << std::endl;
+// 		
+// 		std::cout << this->m_vecCollisionsThisFrame.size() << std::endl;
+// 		for (sCollisionEvent col:  this->m_vecCollisionsThisFrame)
+// 		{
+// 			std::cout
+// 				<< col.pObjectA->getShapeTypeAsString()
+// 				<< " hit "
+// 				<< col.pObjectB->getShapeTypeAsString()
+// 				<< std::endl;
+// 		}
+// 		std::cout << "******************************************" << std::endl;
+// 		// HACK:
 		this->m_vecCollisionsThisFrame.clear();
 	}
 
