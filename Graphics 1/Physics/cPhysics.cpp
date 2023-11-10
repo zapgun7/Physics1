@@ -75,7 +75,7 @@ void cPhysics::setShapeOri(glm::vec3 newOri, unsigned int ID) // Passed in ori i
 	{
 		if (physObj->getUniqueID() == ID)
 		{
-			physObj->setRotationFromEuler(glm::radians(newOri));
+			physObj->setRotationFromEuler(newOri);
 			return;
 		}
 	}

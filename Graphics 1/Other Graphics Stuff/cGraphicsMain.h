@@ -48,7 +48,7 @@ private:
 	void deleteMesh(int meshIDX);
 
 	void flyCameraInput(int width, int height);
-	float m_FlyCamSpeed = 70.0f;
+	float m_FlyCamSpeed = 2.0f;
 
 	std::vector<std::string> m_AvailableModels; // String of model file names to choose from
 

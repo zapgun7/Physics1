@@ -106,6 +106,7 @@ void cMesh::setDrawOrientation(const glm::quat& newOrientation)
 	//	this->drawOrientation = newOrientation;
 
 	this->m_qOrientation = newOrientation;
+	this->eulerOrientation = glm::degrees(glm::eulerAngles(newOrientation));
 
 	return;
 }// ENDOF: iPhysicsMeshTransformAccess interface

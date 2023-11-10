@@ -14,10 +14,6 @@ bool cPhysics::m_Sphere_Sphere_IntersectionTest(sPhsyicsProperties* pSphereA, sP
 
 	if (glm::distance(pSphereA->position, pSphereB->position) < (sphereA->radius + sphereB->radius))
 	{
-		glm::vec3 collisionSpot = pSphereA->position;
-		glm::vec3 otherSphereDir = glm::normalize(pSphereB->position - pSphereA->position);
-		collisionSpot += otherSphereDir * sphereA->radius;
-		m_pGraphicsMain->astAstColl(pSphereA->getUniqueID(), pSphereB->getUniqueID(), collisionSpot);
 		std::cout << "Spheres touching!" << std::endl; 
 		return true;
 	}
@@ -205,22 +201,6 @@ bool cPhysics::m_Sphere_TriMeshIndirect_IntersectionTest(sPhsyicsProperties* pSp
 
 	if (closestDistanceSoFar < pSphere->radius)
 	{
-		if (!m_pGraphicsMain->getShieldStatus()) // If the shield is off
-		{
-			if (pTriMesh_General->friendlyName == "Ship")
-			{
-				m_pGraphicsMain->astShipColl(pSphere_General->getUniqueID(), closestContactPoint);
-				return true;
-				// Destroy the asteroid here(call something in the graphics main that deletes physics, mesh, and creates the red explosion and following grey sphere
-			}
-		}
-		else // If the shield is on
-		{
-			float shieldPower = 200.0f;
-			glm::vec3 dirFromShip = glm::normalize(-pSphere_General->position);
-			pSphere_General->velocity.x += dirFromShip.x * shieldPower;
-			pSphere_General->velocity.y += dirFromShip.y * shieldPower;
-		}
 		// Hit it!
 		// Take the normal of that triangle and bounce the sphere along it
 

@@ -44,7 +44,7 @@ cGraphicsMain* cGraphicsMain::getGraphicsMain(void) // Making graphics main a si
 
 cGraphicsMain::cGraphicsMain()
 {
-	m_cameraEye = glm::vec3(1000, 100.0f, 1000);
+	m_cameraEye = glm::vec3(10.0f, 5.0f, 10.0f);
 	m_cameraTarget = glm::vec3(-1.0f, -0.2f, -1.0f);
 	m_cameraRotation = glm::vec3(0.0, 0.0f, 0.0f);
 	m_upVector = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -670,8 +670,8 @@ bool cGraphicsMain::Update() // Main "loop" of the window. Not really a loop, ju
 	//       //mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
 	glm::mat4 matProjection = glm::perspective(0.7f,
 		ratio,
-		1000.0f,
-		40000.0f); // n/f plane
+		0.01f,
+		1000.0f); // n/f plane
 
 
 
@@ -782,39 +782,39 @@ void cGraphicsMain::switchScene(std::vector< cMesh* > newMeshVec, std::vector<cL
 			newShape = new sPhsyicsProperties();
 			newShape->shapeType = sPhsyicsProperties::SPHERE;
 			newShape->setShape(new sPhsyicsProperties::sSphere(0.5f)); // Since a unit sphere, radius of .5 
-			newShape->pTheAssociatedMesh = meshToAdd;
+			newShape->pTheAssociatedMesh = meshObj;
 			newShape->inverse_mass = 1.0f; // Idk what to set this
 			newShape->friendlyName = "Sphere";
-			newShape->acceleration.y = -1.0f;
+			newShape->acceleration.y = -9.81f;
 			::g_pPhysics->AddShape(newShape);
 		}
-		else if (meshObj->meshName == "Flat_1x1_plane.ply")
-		{
-			// Add matching physics object
-			newShape = new sPhsyicsProperties();
-			newShape->shapeType = sPhsyicsProperties::PLANE;
-
-			//    pGroundMeshShape->setShape( new sPhsyicsProperties::sMeshOfTriangles_Indirect("HilbertRamp_stl (rotated).ply") );
-
-			//newShape->setShape(new sPhsyicsProperties::sMeshOfTriangles_Indirect(meshObj->meshName));
-			newShape->setShape(new sPhsyicsProperties::sPlane(glm::vec3(0,1,0))); // TODO calculate the actual normal later
-
-			// Tie this phsyics object to the associated mesh
-			newShape->pTheAssociatedMesh = meshToAdd;
-			// If it's infinite, the physics intrator ignores it
-			newShape->inverse_mass = 0.0f;  // Infinite, so won't move
-
-			newShape->position.y = -50.0f;
-			//    pGroundMeshShape->orientation.z = glm::radians(-45.0f);
-			newShape->friendlyName = "Plane";
-			::g_pPhysics->AddShape(newShape);
-		}
+// 		else if (meshObj->meshName == "Flat_1x1_plane.ply")
+// 		{
+// 			// Add matching physics object
+// 			newShape = new sPhsyicsProperties();
+// 			newShape->shapeType = sPhsyicsProperties::PLANE;
+// 
+// 			//    pGroundMeshShape->setShape( new sPhsyicsProperties::sMeshOfTriangles_Indirect("HilbertRamp_stl (rotated).ply") );
+// 
+// 			//newShape->setShape(new sPhsyicsProperties::sMeshOfTriangles_Indirect(meshObj->meshName));
+// 			newShape->setShape(new sPhsyicsProperties::sPlane(glm::vec3(0,1,0))); // TODO calculate the actual normal later
+// 
+// 			// Tie this phsyics object to the associated mesh
+// 			newShape->pTheAssociatedMesh = meshObj;
+// 			// If it's infinite, the physics intrator ignores it
+// 			newShape->inverse_mass = 0.0f;  // Infinite, so won't move
+// 
+// 			newShape->position.y = -50.0f;
+// 			//    pGroundMeshShape->orientation.z = glm::radians(-45.0f);
+// 			newShape->friendlyName = "Plane";
+// 			::g_pPhysics->AddShape(newShape);
+// 		}
 		else // Just make it an indirect triangle mesh
 		{
 			newShape = new sPhsyicsProperties();
 			newShape->shapeType = sPhsyicsProperties::MESH_OF_TRIANGLES_INDIRECT;
-			newShape->setShape(new sPhsyicsProperties::sMeshOfTriangles_Indirect(meshToAdd->meshName));
-			newShape->pTheAssociatedMesh = meshToAdd;
+			newShape->setShape(new sPhsyicsProperties::sMeshOfTriangles_Indirect(meshObj->meshName));
+			newShape->pTheAssociatedMesh = meshObj;
 			newShape->inverse_mass = 0.0f; // Idk what to set this
 			newShape->friendlyName = "IndirectMesh";
 			newShape->setRotationFromEuler(glm::vec3(0.0f));
@@ -1050,35 +1050,35 @@ void cGraphicsMain::addNewMesh(std::string fileName, char* friendlyName) // This
 		newShape->acceleration.y = -1.0f;
 		::g_pPhysics->AddShape(newShape);
 	}
-	else if (fileName == "Flat_1x1_plane.ply")
-	{
-		// Add matching physics object
-		newShape->shapeType = sPhsyicsProperties::PLANE;
-
-		//    pGroundMeshShape->setShape( new sPhsyicsProperties::sMeshOfTriangles_Indirect("HilbertRamp_stl (rotated).ply") );
-		//newShape->setShape(new sPhsyicsProperties::sMeshOfTriangles_Indirect(meshToAdd->meshName));
-		newShape->setShape(new sPhsyicsProperties::sPlane(glm::vec3(0, 1, 0))); // TODO calculate the actual normal later
-
-		// Tie this phsyics object to the associated mesh
-		newShape->pTheAssociatedMesh = meshToAdd;
-		// If it's infinite, the physics intrator ignores it
-		newShape->inverse_mass = 0.0f;  // Infinite, so won't move
-
-		//    pGroundMeshShape->acceleration.y = (-9.81f / 5.0f);
-
-		//    pGroundMeshShape->position.x = -10.0f;
-		newShape->position.y = -50.0f;
-		//    pGroundMeshShape->orientation.z = glm::radians(-45.0f);
-		newShape->friendlyName = "Plane";
-		::g_pPhysics->AddShape(newShape);
-	}
+// 	else if (fileName == "Flat_1x1_plane.ply")
+// 	{
+// 		// Add matching physics object
+// 		newShape->shapeType = sPhsyicsProperties::PLANE;
+// 
+// 		//    pGroundMeshShape->setShape( new sPhsyicsProperties::sMeshOfTriangles_Indirect("HilbertRamp_stl (rotated).ply") );
+// 		//newShape->setShape(new sPhsyicsProperties::sMeshOfTriangles_Indirect(meshToAdd->meshName));
+// 		newShape->setShape(new sPhsyicsProperties::sPlane(glm::vec3(0, 1, 0))); // TODO calculate the actual normal later
+// 
+// 		// Tie this phsyics object to the associated mesh
+// 		newShape->pTheAssociatedMesh = meshToAdd;
+// 		// If it's infinite, the physics intrator ignores it
+// 		newShape->inverse_mass = 0.0f;  // Infinite, so won't move
+// 
+// 		//    pGroundMeshShape->acceleration.y = (-9.81f / 5.0f);
+// 
+// 		//    pGroundMeshShape->position.x = -10.0f;
+// 		newShape->position.y = -50.0f;
+// 		//    pGroundMeshShape->orientation.z = glm::radians(-45.0f);
+// 		newShape->friendlyName = "Plane";
+// 		::g_pPhysics->AddShape(newShape);
+// 	}
 	else // Just make it an indirect triangle mesh
 	{
 		newShape->shapeType = sPhsyicsProperties::MESH_OF_TRIANGLES_INDIRECT;
 		newShape->setShape(new sPhsyicsProperties::sMeshOfTriangles_Indirect(meshToAdd->meshName));
 		newShape->pTheAssociatedMesh = meshToAdd;
 		newShape->inverse_mass = 0.0f; // Idk what to set this
-		newShape->friendlyName = "IndirectMesh";
+		newShape->friendlyName = "Plane";
 		newShape->setRotationFromEuler(glm::vec3(0.0f));
  		::g_pPhysics->AddShape(newShape);
 	}
@@ -1096,7 +1096,6 @@ void cGraphicsMain::updateSelectedMesh(int meshIdx, std::string friendlyName, gl
 	::g_pPhysics->setShapeOri(newOri, m_vec_pMeshesToDraw[meshIdx]->uniqueID);
 
 	//m_vec_pMeshesToDraw[meshIdx]->drawPosition = newPos;
-	//m_vec_pMeshesToDraw[meshIdx]->setRotationFromEuler(newOri);
 	//m_vec_pMeshesToDraw[meshIdx]->eulerOrientation = newOri;
 	//glm::vec3 oldOri = m_vec_pMeshesToDraw[meshIdx]->getEulerOrientation();
 	//glm::vec3 deltaOri = newOri - oldOri;
