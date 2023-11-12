@@ -228,6 +228,8 @@ bool cGraphicsMain::Update() // Main "loop" of the window. Not really a loop, ju
 
 	// Graphics update will find a better spot for it later TODO
 	::g_pPhysics->Update(deltaTime); 
+	//::g_pPhysics->Update(0.001f); // DEBUG
+
 
 
 // 	int tempVal = glfwGetKey(m_window, GLFW_KEY_P);
@@ -784,7 +786,7 @@ void cGraphicsMain::switchScene(std::vector< cMesh* > newMeshVec, std::vector<cL
 		{
 			newShape = new sPhsyicsProperties();
 			newShape->shapeType = sPhsyicsProperties::SPHERE;
-			newShape->setShape(new sPhsyicsProperties::sSphere(0.5f)); // Since a unit sphere, radius of .5 
+			newShape->setShape(new sPhsyicsProperties::sSphere(1.0f)); // Since a unit sphere, radius of .5 
 			newShape->pTheAssociatedMesh = meshObj;
 			newShape->inverse_mass = 1.0f; // Idk what to set this
 			newShape->friendlyName = "Sphere";
@@ -1029,7 +1031,7 @@ void cGraphicsMain::addNewMesh(std::string fileName, char* friendlyName) // This
 	if (fileName == "Sphere_1_unit_Radius.ply")
 	{
 		newShape->shapeType = sPhsyicsProperties::SPHERE;
-		newShape->setShape(new sPhsyicsProperties::sSphere(0.5f)); // Since a unit sphere, radius of .5 
+		newShape->setShape(new sPhsyicsProperties::sSphere(1.0f)); // Since a unit sphere, radius of .5 
 		newShape->pTheAssociatedMesh = meshToAdd;
 		newShape->inverse_mass = 1.0f; // Idk what to set this
 		newShape->friendlyName = "Sphere";

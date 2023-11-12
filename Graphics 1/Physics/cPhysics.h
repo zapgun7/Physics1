@@ -71,6 +71,7 @@ private:
 
 	bool m_IsRunning = false; // If physics updates should be calculated. Pausing good for moving stuff around in editor then resuming physics
 
+	
 
 	// this is a list of all the objects that collided this past frame
 	struct sCollisionEvent
@@ -84,6 +85,8 @@ private:
 
 	};
 	std::vector< sCollisionEvent > m_vecCollisionsThisFrame;
+
+	bool m_CheckExistingCollision(sPhsyicsProperties* objA, sPhsyicsProperties* objB); // Returns sCollisionEvent object if the objects have collided before
 };
 
 #endif // _cPhysics_HG_

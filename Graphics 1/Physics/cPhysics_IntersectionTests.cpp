@@ -12,19 +12,92 @@ bool cPhysics::m_Sphere_Sphere_IntersectionTest(sPhsyicsProperties* pSphereA, sP
 	sPhsyicsProperties::sSphere* sphereA = (sPhsyicsProperties::sSphere*)(pSphereA->pShape);
 	sPhsyicsProperties::sSphere* sphereB = (sPhsyicsProperties::sSphere*)(pSphereB->pShape);
 
+	if (m_CheckExistingCollision(pSphereA, pSphereB))
+	{
+		std::cout << "Already Collided!" << std::endl;
+		return true;
+	}
+
 	if (glm::distance(pSphereA->position, pSphereB->position) < (sphereA->radius + sphereB->radius)) // TODO, compare if prevpos -> currpos capsule colldies with each other
 	{
 		std::cout << "Spheres touching!" << std::endl; 
 
 
-		glm::vec3 sphereDirection = glm::normalize(pSphereA->velocity);
-		glm::vec3 otherSphNorm = glm::normalize(pSphereA->position - pSphereB->position);
-		float sphereSpeed = glm::length(pSphereA->velocity);
+		glm::vec3 sphereDirectionA = glm::normalize(pSphereA->velocity);
+		glm::vec3 sphereDirectionB = glm::normalize(pSphereB->velocity);
 
-		glm::vec3 reflectionVec = glm::reflect(sphereDirection, otherSphNorm);
+		glm::vec3 sphNormA = glm::normalize(pSphereB->position - pSphereA->position); // Normal on sphereA
+		float sphereSpeedA = glm::length(pSphereA->velocity);
+		glm::vec3 sphNormB = glm::normalize(pSphereA->position - pSphereB->position); // Normal on sphereB
+		float sphereSpeedB = glm::length(pSphereB->velocity);
 
-		glm::vec3 newVelocity = reflectionVec * sphereSpeed;
-		pSphereA->velocity = newVelocity;
+		glm::vec3 reflectionVecA = glm::reflect(sphereDirectionA, sphNormB);
+		glm::vec3 reflectionVecB = glm::reflect(sphereDirectionB, sphNormA);
+
+		//Compare Dir and Reflection to see how much velocity is passed and kept
+		//glm::degrees(abs(acos(glm::dot(m_NewDir, m_dir) / glm::length(m_NewDir) * glm::length(m_dir))));
+		glm::vec3 sphAFinalVel = glm::vec3(0);
+		glm::vec3 sphBFinalVel = glm::vec3(0);
+
+		// Degrees between spheres dir and reflection dir
+		float sphADeg = glm::degrees(abs(acos(glm::dot(reflectionVecA, sphereDirectionA) / glm::length(reflectionVecA) * glm::length(sphereDirectionA)))); // Me understand degrees, prob faster without conversions
+		float sphBDeg = glm::degrees(abs(acos(glm::dot(reflectionVecB, sphereDirectionB) / glm::length(reflectionVecB) * glm::length(sphereDirectionB))));
+
+		// 180 = total momentum passing, 0 = No momentum passing
+		// Sphere A momentum distribution
+		sphAFinalVel += pSphereA->velocity * (1 - (sphADeg / 180));
+		sphBFinalVel += sphereSpeedA * sphNormA * (sphADeg / 180);
+
+		// Sphere B momentum distribution
+		sphBFinalVel += pSphereB->velocity * (1 - (sphBDeg / 180));
+		sphAFinalVel += sphereSpeedB * sphNormB * (sphBDeg / 180);
+
+
+		// Set positions to barely not touching
+		float distToScooch = (sphereA->radius + sphereB->radius) - glm::distance(pSphereA->position, pSphereB->position);
+		// Move both spheres half distToScooch by their reflect vect
+		pSphereA->position += reflectionVecA * (distToScooch / 2);
+		pSphereB->position += reflectionVecB * (distToScooch / 2);
+
+
+		// How to transfer momentum..
+		//glm::vec3 newVelocityA = reflectionVecA * sphereSpeedA;
+		//glm::vec3 newVelocityB = reflectionVecB * sphereSpeedB;
+
+
+		// Must modify these velocities
+		//pSphereA->velocity = newVelocityA;
+		//pSphereB->velocity = newVelocityB;
+		pSphereA->velocity = sphAFinalVel;
+		pSphereB->velocity = sphBFinalVel;
+
+
+		// TODO might want to add collision in the opposite direction (b->a)
+		sCollisionEvent theCollision;
+
+		theCollision.pObjectA = pSphereA; // For now just log which objects have been dealt with
+		theCollision.pObjectB = pSphereB;
+
+
+		// 
+		//theCollision.contactPoint = closestContactPoint;
+		//theCollision.reflectionNormal = reflectionVec;
+		//		theCollision.velocityAtCollision = reflectionVec;
+
+				// TODO: We'll have a problem later: what deletes this?
+		//sPhsyicsProperties* pTriangleWeHit = new sPhsyicsProperties();
+
+// 		pTriangleWeHit->setShape(new sPhsyicsProperties::sTriangle(closestTriangleVertices[0],
+// 			closestTriangleVertices[1],
+// 			closestTriangleVertices[2]));
+
+		
+
+		this->m_vecCollisionsThisFrame.push_back(theCollision);
+
+
+
+		std::cout << "Collided two spheres!" << std::endl;
 		return true;
 	}
 	
@@ -253,11 +326,14 @@ bool cPhysics::m_Sphere_TriMeshIndirect_IntersectionTest(sPhsyicsProperties* pSp
 		pSphere_General->velocity = newVelocity;
 
 
+		// Re-position the sphere where it would be if it perfectly bounced off the triangle
+		float distToCorrect = (pSphere->radius - closestDistanceSoFar) * 2; // Get length we need to move the sphere by
+		glm::vec3 moveDir = glm::normalize((pSphere_General->position - closestContactPoint));
+		pSphere_General->position += (moveDir * distToCorrect);
+
+
 		// We add this "collision event" to the list or queue of collisions
 		sCollisionEvent theCollision;
-		
-		// Forcefield reaction here
-
 		
 		theCollision.pObjectA = pSphere_General;
 		// 

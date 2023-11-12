@@ -96,6 +96,19 @@ void cPhysics::deleteAllObjects(void)
 	}
 }
 
+
+bool cPhysics::m_CheckExistingCollision(sPhsyicsProperties* objB, sPhsyicsProperties* objA)
+{
+	for (unsigned int i = 0; i < m_vecCollisionsThisFrame.size(); i++)
+	{
+		if ((m_vecCollisionsThisFrame[i].pObjectA == objA) && (m_vecCollisionsThisFrame[i].pObjectB == objB))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 sPhsyicsProperties* cPhysics::findShapeByUniqueID(unsigned int uniqueIDtoFind)
 {
 	for (sPhsyicsProperties* pCurrentShape : this->m_vec_pPhysicalProps)
