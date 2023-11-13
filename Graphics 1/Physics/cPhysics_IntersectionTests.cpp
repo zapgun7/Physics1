@@ -31,11 +31,11 @@ bool cPhysics::m_Sphere_Sphere_IntersectionTest(sPhsyicsProperties* pSphereA, sP
 		glm::vec3 sphNormB = glm::normalize(pSphereA->position - pSphereB->position); // Normal on sphereB
 		float sphereSpeedB = glm::length(pSphereB->velocity);
 
+		// Reflection vector calc
 		glm::vec3 reflectionVecA = glm::reflect(sphereDirectionA, sphNormB);
 		glm::vec3 reflectionVecB = glm::reflect(sphereDirectionB, sphNormA);
 
 		//Compare Dir and Reflection to see how much velocity is passed and kept
-		//glm::degrees(abs(acos(glm::dot(m_NewDir, m_dir) / glm::length(m_NewDir) * glm::length(m_dir))));
 		glm::vec3 sphAFinalVel = glm::vec3(0);
 		glm::vec3 sphBFinalVel = glm::vec3(0);
 
@@ -221,8 +221,8 @@ bool cPhysics::m_Sphere_TriMeshIndirect_IntersectionTest(sPhsyicsProperties* pSp
 		// Scaling matrix
 //		glm::mat4 matScale = glm::scale(glm::mat4(1.0f),
 //										glm::vec3(pTriMesh->scale,
-//												  pTheGround->scale,
-//												  pTheGround->scale));
+//												  pTriMesh->scale,
+//												  pTriMesh->scale));
 //		--------------------------------------------------------------
 
 		// Combine all these transformation
@@ -322,6 +322,20 @@ bool cPhysics::m_Sphere_TriMeshIndirect_IntersectionTest(sPhsyicsProperties* pSp
 		// Update the  velocity based on this reflection vector
 		float sphereSpeed = glm::length(pSphere_General->velocity);
 		glm::vec3 newVelocity = reflectionVec * sphereSpeed;
+
+		// RESTITUTION CALCULATION
+		//newVelocity.y *= 0.5f;
+
+		// Degree between sphere dir and tri norm: 180 is absolute restitution application, 90 is none (parallel to it)
+		float degToNorm = glm::degrees(abs(acos(glm::dot(sphereDirection, triNormal) / glm::length(sphereDirection) * glm::length(triNormal)))); 
+
+		//degToNorm -= 90; // Now we're working with 90: total restitution app.   0: no app
+		float restAppDegree = degToNorm - 90; // Multiplier (1.0 - 0.0) to influence effects of the restitution application
+		restAppDegree /= 90;
+
+		glm::vec3 restitutionVelLoss = -triNormal * newVelocity; // Calculate vector we want to reduce velocity on (negative normal of surface it's bouncing on)
+		newVelocity += (restitutionVelLoss * (1.0f - pSphere_General->restitution)) * restAppDegree; // Subtract said vector from newVelocity, scaled with its restitution (0 restitution = no bounce, 1 = full bounce)
+
 
 		pSphere_General->velocity = newVelocity;
 

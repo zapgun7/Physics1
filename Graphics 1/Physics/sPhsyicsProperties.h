@@ -176,6 +176,8 @@ struct sPhsyicsProperties
 	// Save the old position
 	glm::vec3 oldPosition = glm::vec3(0.0f);
 
+	float restitution = 0.0f; // No bounce default
+
 //	glm::vec3 orientation = glm::vec3(0.0f);
 	void setRotationFromEuler(glm::vec3 newEulerAngleXYZ)
 	{

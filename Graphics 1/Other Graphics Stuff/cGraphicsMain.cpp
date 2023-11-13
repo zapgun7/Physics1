@@ -19,6 +19,8 @@
 #include "../Physics/cPhysics.h"
 
 
+
+
 cGraphicsMain* cGraphicsMain::m_pTheOnlyGraphicsMain = NULL;
 extern cPhysics* g_pPhysics;
 
@@ -50,6 +52,7 @@ cGraphicsMain::cGraphicsMain()
 	m_upVector = glm::vec3(0.0f, 1.0f, 0.0f);
 	m_ShowLightEditor = false;
 	m_ShowMeshEditor = false;
+	m_player = new cPlayer();
 	//m_io = ImGui::GetIO();
 }
 
@@ -197,6 +200,27 @@ bool cGraphicsMain::Initialize()
 
 	/////////////////////////////////////////
 
+	// Load in default player object
+	cMesh* meshToAdd = new cMesh();
+	meshToAdd->meshName = "Sphere_1_unit_Radius.ply"; // Set object type
+	meshToAdd->friendlyName = "Player";
+	meshToAdd->bDoNotLight = true;
+
+	m_vec_pMeshesToDraw.push_back(meshToAdd);
+
+	// Create the physics object
+	sPhsyicsProperties* newShape = new sPhsyicsProperties();
+	newShape->shapeType = sPhsyicsProperties::SPHERE;
+	newShape->setShape(new sPhsyicsProperties::sSphere(1.0f)); // Since a unit sphere, radius of .5 
+	newShape->pTheAssociatedMesh = meshToAdd;
+	newShape->inverse_mass = 1.0f; // Idk what to set this
+	newShape->friendlyName = "Sphere";
+	newShape->acceleration.y = -20.0f;
+	newShape->position = glm::vec3(0, 10, 0);
+	::g_pPhysics->AddShape(newShape);
+	m_player->setAssociatedPhysObj(newShape);
+
+	meshToAdd->uniqueID = newShape->getUniqueID();
 
 	return 1;
 }
@@ -221,7 +245,52 @@ bool cGraphicsMain::Update() // Main "loop" of the window. Not really a loop, ju
 
 
 	static bool enablePhysics = false; // Toggle physics update calls
+	static bool isPlayer = false; // Toggle between player control and freecam
 
+
+	float const velRandInterval = 0.1f;
+	static double timeTillVelRand = velRandInterval;
+
+	timeTillVelRand -= deltaTime;
+
+
+	// Scary Balls
+	if (timeTillVelRand <= 0)
+	{
+		timeTillVelRand += velRandInterval;
+		for (unsigned int i = 0; i < m_vec_pMeshesToDraw.size(); i++)
+		{
+			//std::string test = m_vec_pMeshesToDraw[i]->friendlyName.substr(0, 4);
+			if (m_vec_pMeshesToDraw[i]->friendlyName.substr(0, 5) == "Scary") // If the type to fling around
+			{
+				if (rand() % 30 == 0)
+				{
+					sPhsyicsProperties* obj = ::g_pPhysics->findShapeByUniqueID(m_vec_pMeshesToDraw[i]->uniqueID);
+					obj->velocity.x = rand() % 50;
+					obj->velocity.z = rand() % 50;
+					//obj->velocity.y = rand() % 50;
+					if (rand() % 2 == 0)
+						obj->velocity.x *= -1;
+					if (rand() % 2 == 0)
+						obj->velocity.z *= -1;
+				}
+			}
+		}
+	}
+
+	// Teleport obj back up to 0,0
+
+	for (cMesh* mesh : m_vec_pMeshesToDraw)
+	{
+		sPhsyicsProperties* obj = ::g_pPhysics->findShapeByUniqueID(mesh->uniqueID);
+		if (obj->position.y < -300)
+		{
+			sPhsyicsProperties* obj = ::g_pPhysics->findShapeByUniqueID(mesh->uniqueID);
+			obj->velocity = glm::vec3(0);
+			obj->position = glm::vec3(0, 20, 0);
+			obj->oldPosition = glm::vec3(0, 20, 0);
+		}
+	}
 
 
 
@@ -289,10 +358,24 @@ bool cGraphicsMain::Update() // Main "loop" of the window. Not really a loop, ju
 
 		ImGui::SameLine();
 		if (enablePhysics)
-			ImGui::Text("ON");
+			ImGui::Text("ON    ");
 		else
-			ImGui::Text("OFF");
+			ImGui::Text("OFF   ");
 
+
+		ImGui::SameLine();
+		if (ImGui::Button("Player Toggle"))
+		{
+			if (isPlayer)
+				isPlayer = false;
+			else
+				isPlayer = true;
+		}
+		ImGui::SameLine();
+		if (isPlayer)
+			ImGui::Text("Player");
+		else
+			ImGui::Text("FreeCam");
 
 		if (ImGui::Button("Mesh Editor"))
 		{
@@ -661,7 +744,29 @@ bool cGraphicsMain::Update() // Main "loop" of the window. Not really a loop, ju
 	// *****************************************************************
 			//uniform vec4 eyeLocation;
 
-	flyCameraInput(width, height); // UPDATE CAMERA STATS
+	if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) // Lazy way to exit player mode
+	{
+		isPlayer = false;
+		glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
+
+
+	std::vector<glm::vec3> newCamInfo;
+
+	if (!isPlayer)
+		flyCameraInput(width, height); // UPDATE CAMERA STATS
+	else
+	{
+		newCamInfo = m_player->Update(deltaTime, m_window, m_cameraEye, m_cameraTarget, m_cameraRotation);
+
+		m_cameraEye = newCamInfo[0];
+		m_cameraTarget = newCamInfo[1];
+		m_cameraRotation = newCamInfo[2];
+		glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
+
+
+
 
 	GLint eyeLocation_UL = glGetUniformLocation(m_shaderProgramID, "eyeLocation");
 	glUniform4f(eyeLocation_UL,
@@ -779,6 +884,7 @@ void cGraphicsMain::switchScene(std::vector< cMesh* > newMeshVec, std::vector<cL
 	// Delete all current physics objects
 	::g_pPhysics->deleteAllObjects();
 
+
 	for (cMesh* meshObj : m_vec_pMeshesToDraw) // Attach physics objects to all new objects
 	{
 		sPhsyicsProperties* newShape;
@@ -793,6 +899,7 @@ void cGraphicsMain::switchScene(std::vector< cMesh* > newMeshVec, std::vector<cL
 			newShape->acceleration.y = -20.0f;
 			newShape->position = meshObj->drawPosition;
 			newShape->oldPosition = meshObj->drawPosition;
+			newShape->restitution = 0.5f;
 			::g_pPhysics->AddShape(newShape);
 		}
 		else // Just make it an indirect triangle mesh
@@ -811,6 +918,29 @@ void cGraphicsMain::switchScene(std::vector< cMesh* > newMeshVec, std::vector<cL
 		meshObj->uniqueID = newShape->getUniqueID(); // Set mesh ID to match associated physics object's ID
 	}
 
+	// Load in default player object
+	cMesh* meshToAdd = new cMesh();
+	meshToAdd->meshName = "Sphere_1_unit_Radius.ply"; // Set object type
+	meshToAdd->friendlyName = "Player";
+	meshToAdd->bDoNotLight = true;
+
+	m_vec_pMeshesToDraw.push_back(meshToAdd);
+
+	// Create the physics object
+	sPhsyicsProperties* newShape = new sPhsyicsProperties();
+	newShape->shapeType = sPhsyicsProperties::SPHERE;
+	newShape->setShape(new sPhsyicsProperties::sSphere(1.0f)); // Since a unit sphere, radius of .5 
+	newShape->pTheAssociatedMesh = meshToAdd;
+	newShape->inverse_mass = 1.0f; // Idk what to set this
+	newShape->friendlyName = "Player";
+	newShape->acceleration.y = -20.0f;
+	newShape->position = glm::vec3(0, 10, 0);
+	::g_pPhysics->AddShape(newShape);
+	m_player->setAssociatedPhysObj(newShape);
+
+	meshToAdd->uniqueID = newShape->getUniqueID();
+
+
 	for (unsigned int i = 0; i < m_pTheLights->NUMBER_OF_LIGHTS_IM_USING; i++) // Iterate through all lights and replace them with the new ones. Just replace non UL values
 	//for (unsigned int i = 0; i < newLights.size(); i++) // Use this for updating files that contain less (total possible) than what it currently is
 	{
@@ -826,6 +956,13 @@ void cGraphicsMain::switchScene(std::vector< cMesh* > newMeshVec, std::vector<cL
 }
 
 
+
+void cGraphicsMain::setCameraParams(glm::vec3 camPos, glm::vec3 camDir)
+{
+	m_cameraEye = camPos;
+	m_cameraTarget = camDir;
+	return;
+}
 
 cMesh* cGraphicsMain::m_pFindMeshByFriendlyName(std::string friendlyNameToFind)
 {
@@ -1036,6 +1173,7 @@ void cGraphicsMain::addNewMesh(std::string fileName, char* friendlyName) // This
 		newShape->inverse_mass = 1.0f; // Idk what to set this
 		newShape->friendlyName = "Sphere";
 		newShape->acceleration.y = -20.0f;
+		newShape->restitution = 0.5f;
 		::g_pPhysics->AddShape(newShape);
 	}
 // 	else if (fileName == "Flat_1x1_plane.ply")

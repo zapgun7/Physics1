@@ -46,6 +46,9 @@
     <Filter Include="Physics">
       <UniqueIdentifier>{a3eb3f03-de0d-4d45-864d-edc647ca39f0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Player">
+      <UniqueIdentifier>{64aa2570-a3db-4003-a09b-4b47c87a8dc8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Basic Shader Manager\cShaderManager.cpp">
@@ -117,6 +120,9 @@
     <ClCompile Include="Physics\cPhysics_Update.cpp">
       <Filter>Physics</Filter>
     </ClCompile>
+    <ClCompile Include="cPlayer.cpp">
+      <Filter>Player</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Basic Shader Manager\cShaderManager.h">
@@ -181,6 +187,9 @@
     </ClInclude>
     <ClInclude Include="Physics\cPhysics.h">
       <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="cPlayer.h">
+      <Filter>Player</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -148,6 +148,7 @@
     <ClCompile Include="Basic Shader Manager\cShader.cpp" />
     <ClCompile Include="Basic Shader Manager\cShaderManager.cpp" />
     <ClCompile Include="cInputHandler.cpp" />
+    <ClCompile Include="cPlayer.cpp" />
     <ClCompile Include="cSceneManagement.cpp" />
     <ClCompile Include="cVAOManager\cVAOManager.cpp" />
     <ClCompile Include="main.cpp" />
@@ -174,6 +175,7 @@
     <ClInclude Include="..\include\imgui\imstb_truetype.h" />
     <ClInclude Include="Basic Shader Manager\cShaderManager.h" />
     <ClInclude Include="cInputHandler.h" />
+    <ClInclude Include="cPlayer.h" />
     <ClInclude Include="cVAOManager\cVAOManager.h" />
     <ClInclude Include="Other Graphics Stuff\cGraphicsMain.h" />
     <ClInclude Include="Other Graphics Stuff\cLightManager.h" />

@@ -17,6 +17,8 @@
 #include "cLightManager.h"
 #include "../cSceneManagement.h"
 
+#include "../cPlayer.h"
+
 class cGraphicsMain
 {
 public:
@@ -29,6 +31,7 @@ public:
 	void removeFromDrawMesh(int ID);
 	void switchScene(std::vector< cMesh* > newMeshVec, std::vector<cLight> newLights); // New mesh vector to copy over (will properly release all resources tied to the old one); vector of lights to copy over to the new one
 
+	void setCameraParams(glm::vec3 camPos, glm::vec3 camDir);
 
 
 private:
@@ -52,6 +55,7 @@ private:
 
 	std::vector<std::string> m_AvailableModels; // String of model file names to choose from
 
+	cPlayer* m_player;
 
 	glm::vec3 m_cameraEye;
 	glm::vec3 m_cameraTarget;
